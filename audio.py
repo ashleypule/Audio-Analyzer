@@ -2,7 +2,7 @@ import streamlit as st
 import os
 from groq import Groq
 
-api_key = 'AIzaSyC2lYhp-YByNqA5nh5KqJblrGSOlrHGO64'
+api_key = "AIzaSyC2lYhp-YByNqA5nh5KqJblrGSOlrHGO64"
 
 # Initialize Groq client
 client = Groq(api_key=api_key)
