@@ -1,34 +1,49 @@
-from dotenv import load_dotenv
 import streamlit as st
 import os
-from openai import OpenAI
+from groq import Groq
 
-load_dotenv()
-MODEL = 'gpt-4o'
-open_api_key = ""
+api_key = 'AIzaSyC2lYhp-YByNqA5nh5KqJblrGSOlrHGO64'
 
-st.title('AI AUDIO ANALYZER')
-audio_format = ['mp3','wav','m4a']
-audio_file = st.file_uploader('upload an audio file',type= audio_format)
+# Initialize Groq client
+client = Groq(api_key=api_key)
 
-if audio_file:
-    st.audio(audio_file)
+# Streamlit App
+st.title('Audio to Text Transcription')
 
-    transcription = open_api_key.audio.transcription.create(
-        model = 'whisper-1',
-        file = audio_file
-    )
+st.write('Upload an audio file to transcribe it to text using the Groq API.')
 
-    response = open_api_key.chat.completions.create(
-    model=MODEL,  # Replace MODEL with your actual model identifier
-    messages=[
-        {"role": "system", "content": "You are an audio analyzer AI. Analyze the audio and create a summary of the provided transcription. Respond in Markdown."},
-        {"role": "user", "content": f"The audio transcription is: {transcription.text}"}
-    ],
-    temperature=0  # Temperature parameter for response generation
-    )
-    st.markdown(response['choices'][0]['message']['content'])
+uploaded_file = st.file_uploader("Choose an audio file", type=["wav", "mp3", "m4a"])
 
-# Assuming response.choices[0].messages.content is a string in Markdown format
-# Print the Markdown content using st.markdown if you are using Streamlit
+if uploaded_file is not None:
+    # Display the uploaded file
+    st.audio(uploaded_file, format='audio/wav')
+    
+    if st.button('Transcribe'):
+        # Save the uploaded file temporarily
+        temp_filename = "temp_audio_file.m4a"
+        with open(temp_filename, "wb") as f:
+            f.write(uploaded_file.getbuffer())
+        
+        # Read and process the audio file
+        try:
+            with open(temp_filename, "rb") as file:
+                # Transcribe the audio file using the Groq API
+                transcription = client.audio.transcriptions.create(
+                    file=(temp_filename, file.read()),
+                    model="whisper-large-v3",
+                    prompt="Specify context or spelling",  # Optional
+                    response_format="json",  # Optional
+                    language="en",  # Optional
+                    temperature=0.0  # Optional
+                )
+                st.write('Transcribed Text:')
+                st.write(transcription.text)
+        except Exception as e:
+            st.error(f'Error: {str(e)}')
+        finally:
+            # Clean up the temporary file
+            try:
+                os.remove(temp_filename)
+            except PermissionError:
+                st.error(f'Could not delete temporary file: {temp_filename}. Please delete it manually.')
 
